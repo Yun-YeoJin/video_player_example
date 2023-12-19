@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
@@ -16,6 +17,7 @@ class CustomVideoPlayer extends StatefulWidget {
 
 class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
   VideoPlayerController? videoController;
+  Duration currentPosition = Duration();
 
   @override
   void initState() {
@@ -30,6 +32,14 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
     );
 
     await videoController!.initialize();
+
+    videoController!.addListener(() { //videoController 값이 변경될 때마다 실행.
+      final currentPosition = videoController!.value.position;
+
+      setState(() {
+        this.currentPosition = currentPosition;
+      });
+    });
     //UI를 새로 빌드.
     setState(() {
 
@@ -55,20 +65,28 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                 onForwardPressed: onForwardPressed,
                 isPlaying: videoController!.value.isPlaying,
             ),
-            Positioned(
-              right: 0, //오른쪽 끝에서부터 0픽셀만큼 이동
-              child: IconButton(
-                  onPressed: (){},
-                  color: Colors.white,
-                  iconSize: 30.0,
-                  icon: Icon(
-                      Icons.photo_camera_back
-                  )
-              ),
+            _NewVideo(
+                onPressed: onNewVideoPressed
+            ),
+            _SliderBottom(
+                currentPosition: currentPosition,
+                maxPosition: videoController!.value.duration,
+                onSliderChanged: onSliderChanged
             )
           ],
         )
     );
+  }
+
+  void onSliderChanged(double val) {
+    videoController!.seekTo(
+      Duration(
+        seconds: val.toInt()
+      )
+    );
+  }
+  void onNewVideoPressed() {
+
   }
 
   void onReversePressed() {
@@ -89,7 +107,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
     Duration position = maxPosition;
 
     if ((maxPosition - Duration(seconds: 3)).inSeconds > currentPosition.inSeconds) {
-      position = currentPosition - Duration(seconds: 3);
+      position = currentPosition + Duration(seconds: 3);
     }
     videoController!.seekTo(position);
   }
@@ -104,8 +122,6 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
       }  
     });
   }
-
- 
 }
 
 class _Controls extends StatelessWidget {
@@ -114,11 +130,11 @@ class _Controls extends StatelessWidget {
   final VoidCallback onForwardPressed;
   final bool isPlaying;
 
-  const _Controls(
-      {required this.onPlayPressed,
+  const _Controls({
+      required this.onPlayPressed,
       required this.onForwardPressed,
       required this.onReversePressed,
-        required this.isPlaying,
+      required this.isPlaying,
       super.key});
 
   @override
@@ -157,6 +173,71 @@ class _Controls extends StatelessWidget {
         icon: Icon(
             iconData
         )
+    );
+  }
+}
+
+class _NewVideo extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _NewVideo({required this.onPressed, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      right: 0, //오른쪽 끝에서부터 0픽셀만큼 이동
+      child: IconButton(
+          onPressed: onPressed,
+          color: Colors.white,
+          iconSize: 30.0,
+          icon: Icon(
+              Icons.photo_camera_back
+          )
+      ),
+    );
+  }
+}
+
+class _SliderBottom extends StatelessWidget {
+  final Duration currentPosition;
+  final Duration maxPosition;
+  final ValueChanged<double> onSliderChanged;
+
+  const _SliderBottom({required this.currentPosition, required this.maxPosition, required this.onSliderChanged, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      bottom: 0,
+      right: 0,
+      left: 0,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Row(
+          children: [
+            Text(
+              "${currentPosition.inMinutes}:${(currentPosition.inSeconds % 60).toString().padLeft(2, "0")}",
+              style: TextStyle(
+                  color: Colors.white
+              ),
+            ),
+            Expanded(
+              child: Slider(
+                value: currentPosition.inSeconds.toDouble(),
+                onChanged: onSliderChanged,
+                max: maxPosition.inSeconds.toDouble(),
+                min: 0,//최대 길이
+              ),
+            ),
+            Text(
+              "${maxPosition.inMinutes}:${(maxPosition.inSeconds % 60).toString().padLeft(2, "0")}",
+              style: TextStyle(
+                  color: Colors.white
+              ),
+            )
+          ],
+        ),
+      ),
     );
   }
 }
