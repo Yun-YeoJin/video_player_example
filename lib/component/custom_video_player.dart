@@ -8,8 +8,9 @@ import 'package:video_player/video_player.dart';
 
 class CustomVideoPlayer extends StatefulWidget {
   final XFile video;
+  final VoidCallback onNewVideoPressed;
 
-  const CustomVideoPlayer({required this.video, super.key});
+  const CustomVideoPlayer({required this.video, required this.onNewVideoPressed, super.key});
 
   @override
   State<CustomVideoPlayer> createState() => _CustomVideoPlayerState();
@@ -18,15 +19,27 @@ class CustomVideoPlayer extends StatefulWidget {
 class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
   VideoPlayerController? videoController;
   Duration currentPosition = Duration();
+  bool showControls = false;
 
   @override
-  void initState() {
+  void initState() { //최초 한 번만 실행이 됨.
     super.initState();
 
     initializeController();
   }
 
+  @override
+  void didUpdateWidget(covariant CustomVideoPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    //oldWidget은 새로운 위젯이 생성되기 전 위젯
+    if (oldWidget.video.path != widget.video.path) {
+      initializeController();
+    }
+  }
+
   initializeController() async {
+    currentPosition = Duration();
+
     videoController = VideoPlayerController.file(
       File(widget.video.path),
     );
@@ -54,26 +67,35 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
     }
     return AspectRatio(
         aspectRatio: videoController!.value.aspectRatio,
-        child: Stack(
-          children: [
-            VideoPlayer(
-                videoController!
-            ),
-            _Controls(
-                onReversePressed: onReversePressed,
-                onPlayPressed: onPlayPressed,
-                onForwardPressed: onForwardPressed,
-                isPlaying: videoController!.value.isPlaying,
-            ),
-            _NewVideo(
-                onPressed: onNewVideoPressed
-            ),
-            _SliderBottom(
-                currentPosition: currentPosition,
-                maxPosition: videoController!.value.duration,
-                onSliderChanged: onSliderChanged
-            )
-          ],
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              showControls = !showControls;
+            });
+          },
+          child: Stack(
+            children: [
+              VideoPlayer(
+                  videoController!
+              ),
+              if (showControls)
+                _Controls(
+                  onReversePressed: onReversePressed,
+                  onPlayPressed: onPlayPressed,
+                  onForwardPressed: onForwardPressed,
+                  isPlaying: videoController!.value.isPlaying,
+                ),
+              if (showControls)
+              _NewVideo(
+                  onPressed: widget.onNewVideoPressed
+              ),
+              _SliderBottom(
+                  currentPosition: currentPosition,
+                  maxPosition: videoController!.value.duration,
+                  onSliderChanged: onSliderChanged
+              )
+            ],
+          ),
         )
     );
   }
@@ -85,9 +107,9 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
       )
     );
   }
-  void onNewVideoPressed() {
-
-  }
+  // void onNewVideoPressed() {
+  //
+  // }
 
   void onReversePressed() {
     final currentPosition = videoController!.value.position;
@@ -99,7 +121,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
     }
     videoController!.seekTo(position);
   }
-  
+
   void onForwardPressed() {
     final maxPosition = videoController!.value.duration;
     final currentPosition = videoController!.value.position;
@@ -119,7 +141,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
         videoController!.pause();
       } else {
         videoController!.play();
-      }  
+      }
     });
   }
 }
@@ -140,9 +162,9 @@ class _Controls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return  Container(
+      height: MediaQuery.of(context).size.height,
       color: Colors.black.withOpacity(0.5),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           renderIconButton(

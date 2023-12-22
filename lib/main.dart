@@ -3,7 +3,7 @@ import 'package:vid_player/screen/home_screen.dart';
 
 void main() {
   runApp(
-    MaterialApp(
+    const MaterialApp(
       home: HomeScreen(),
     )
   );

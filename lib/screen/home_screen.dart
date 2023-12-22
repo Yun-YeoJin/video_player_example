@@ -23,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Center(
       child: CustomVideoPlayer(
         video: video!,
+        onNewVideoPressed: onNewVideoPressed,
       ),
     );
   }
@@ -35,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _Logo(
-            onTap: onLogoTap
+            onTap: onNewVideoPressed
           ),
           SizedBox(height: 30.0), //padding 대신 쓰는 이유! -> 한번 더 감싸야하기 때문 ㅠ
           _AppName()
@@ -44,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void onLogoTap() async {
+  void onNewVideoPressed() async {
     final video = await ImagePicker().pickVideo(
         source: ImageSource.gallery //gallery, camera
     );
@@ -57,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   BoxDecoration getBoxDecoration() {
-    return BoxDecoration(
+    return const BoxDecoration(
       gradient: LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
